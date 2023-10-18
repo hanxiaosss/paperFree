@@ -1,0 +1,37 @@
+{
+  "name": "board",
+  "version": "1.0.0",
+  "description": "a learn project",
+  "main": "index.js",
+  "scripts": {
+    "dev": "cross-env vite --host"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hanxiaosss/board.git"
+  },
+  "keywords": [
+    "canvas",
+    "vite"
+  ],
+  "author": "hanxiaosss",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hanxiaosss/board/issues"
+  },
+  "homepage": "https://github.com/hanxiaosss/board#readme",
+  "devDependencies": {
+    "@types/react": "^18.2.21",
+    "@types/react-dom": "^18.2.7",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.16.0",
+    "vite": "^4.4.9"
+  },
+  "dependencies": {
+    "cross-env": "^7.0.3",
+    "nanoid": "^3.3.3",
+    "perfect-freehand": "^1.2.0",
+    "roughjs": "^4.5.2"
+  }
+}
