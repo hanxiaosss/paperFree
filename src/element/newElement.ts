@@ -2,6 +2,8 @@ import { randomInteger, randomId } from "../random";
 import { getUpdatedTimestamp } from "../utils";
 export const newFreeDrawElement = (
   opts: {
+    x:number,
+    y:number,
     type: "freedraw";
     points?: any;
     simulatePressure: boolean;
@@ -48,6 +50,10 @@ const _newElementBase = (
     boundElements,
     updated: getUpdatedTimestamp(),
     link,
+    fillWeight:0.5,
+    stroke:"none",
+    strokeWidth:1,
+    roughness:1
   };
   return element;
 };

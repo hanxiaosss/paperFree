@@ -1,27 +1,16 @@
 import { RoughCanvas } from "roughjs/bin/canvas";
-
-import {
-  viewportCoordsToSceneCoords,
-  throttleRAF,
-} from "../utils";
-
-export const DEFAULT_SPACING = 2;
+import { renderElement } from "./renderElement";
+import { NonDeleteddrawElement, drawElement } from "../element/type";
 
 
 export const _renderScene = ({
   elements,
-  appState,
-  scale,
   rc,
   canvas,
-  renderConfig,
 }: {
-  elements: any[];
-  appState: any;
-  scale: number;
+  elements: readonly NonDeleteddrawElement[];
   rc: RoughCanvas;
   canvas: HTMLCanvasElement;
-  renderConfig: any;
 }) =>
   // extra options passed to the renderer
   {
@@ -33,48 +22,34 @@ export const _renderScene = ({
 
     context.setTransform(1, 0, 0, 1, 0, 0);
     context.save();
-    context.scale(scale, scale)
+    // Apply zoom
+    context.save();
 
+    console.log(elements,'elements.foreach')
+
+    elements.forEach((element) => {
+      try {
+        renderElement(element, rc, context);
+      } catch (error: any) {
+        console.error(error);
+      }
+    });
+
+
+    context.restore();
+    return { atLeastOneVisibleElement: elements.length > 0 };
   };
 
-const renderSceneThrottled = throttleRAF(
-  (config: {
-    elements: any[];
-    appState: any;
-    scale: number;
-    rc: RoughCanvas;
-    canvas: HTMLCanvasElement;
-    renderConfig: any;
-    callback?: (data: ReturnType<typeof _renderScene>) => void;
-  }) => {
-    const ret = _renderScene(config);
-    config.callback?.(ret);
-  },
-  { trailing: true },
-);
-
-/** renderScene throttled to animation framerate */
 export const renderScene = <T extends boolean = false>(
   config: {
-    elements: any[];
-    appState: any;
-    scale: number;
+    elements: readonly NonDeleteddrawElement[];
     rc: RoughCanvas;
     canvas: HTMLCanvasElement;
-    renderConfig: any;
     callback?: (data: ReturnType<typeof _renderScene>) => void;
-  },
-  /** Whether to throttle rendering. Defaults to false.
-   * When throttling, no value is returned. Use the callback instead. */
-  throttle?: T,
-): T extends true ? void : ReturnType<typeof _renderScene> => {
-  if (throttle) {
-    renderSceneThrottled(config);
-    return undefined as T extends true ? void : ReturnType<typeof _renderScene>;
   }
+): T extends true ? void : ReturnType<typeof _renderScene> => {
+  const {elements,rc,canvas}=config
   const ret = _renderScene(config);
   config.callback?.(ret);
   return ret as T extends true ? void : ReturnType<typeof _renderScene>;
 };
-
-
