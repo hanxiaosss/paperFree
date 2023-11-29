@@ -25,8 +25,6 @@ export const _renderScene = ({
     // Apply zoom
     context.save();
 
-    console.log(elements,'elements.foreach')
-
     elements.forEach((element) => {
       try {
         renderElement(element, rc, context);

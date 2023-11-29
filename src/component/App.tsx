@@ -5,10 +5,12 @@ import Scene from '../scene/Scene';
 import { RoughCanvas } from 'roughjs/bin/canvas';
 import { FreeDrawElement } from '../element/type';
 import { PointerDownState } from '../type';
-import { viewportCoordsToSceneCoords, withBatchedUpdates } from '../utils';
+import { viewportCoordsToSceneCoords, withBatchedUpdates, withBatchedUpdatesThrottled } from '../utils';
 import { getGridPoint } from './math';
 import { newFreeDrawElement } from '../element/newElement';
 import { mutateElement } from '../element/mutateElement';
+
+let pathCatch:any[] = []
 
 
 class App extends React.Component<any, any> {
@@ -45,7 +47,7 @@ class App extends React.Component<any, any> {
         height={canvasHeight}
         ref={this.handleCanvasRef}
         onPointerDown={this.handleCanvasPointerDown}
-        // onPointerMove={this.handleCanvasPointerMove}
+        onPointerMove={this.handleCanvasPointerMove}
       ></canvas>
     )
   }
@@ -77,41 +79,6 @@ class App extends React.Component<any, any> {
   }
 
   componentDidMount(): void {
-
-    const filltype = JSON.parse('{"shape":"polygon","sets":[],"options":{"maxRandomnessOffset":2,"roughness":1,"bowing":1,"stroke":"none","strokeWidth":0.5,"curveTightness":0,"curveFitting":0.95,"curveStepCount":9,"fillStyle":"hachure","fillWeight":0.5,"hachureAngle":-41,"hachureGap":4,"dashOffset":-1,"dashGap":-1,"zigzagOffset":-1,"seed":2335,"disableMultiStroke":true,"disableMultiStrokeFill":false,"preserveVertices":false,"strokeLineDash":[1]}}')
-
-    const canvas = document.getElementById('canvas') as any
-    // // console.log(canvas, 'hx')
-    // const roughCanvas = rough.canvas(canvas as any)
-    // let generator = roughCanvas.generator;
-
-    canvas.addEventListener('pointerdown', (e) => {
-     let path: any[] = []
-     let isDrawing = true
-
-     this.rc?.draw(filltype)
-
-      // canvas.addEventListener('pointermove', drawLine)
-      canvas.addEventListener('pointerup', stopDrawing)
-
-      // function drawLine(e: any) {
-      //   if (!isDrawing) return
-
-      //   path.push([e.clientX, e.clientY] as any[])
-      //   let curve = generator.curve(path);
-      //   console.log(curve,'hx')
-      //   roughCanvas.draw(curve)
-      // }
-      // drawLine(e)
-      // let curve = generator.curve(path);
-      // roughCanvas.draw(curve)
-      
-      function stopDrawing() {
-        isDrawing = false
-        canvas.removeEventListener('pointermove', drawLine)
-        canvas.removeEventListener('pointerup', stopDrawing)
-      }
-    })
   }
 
   private initialPointerDownState(
@@ -120,41 +87,18 @@ class App extends React.Component<any, any> {
     const origin = viewportCoordsToSceneCoords(event);
     return {
       origin,
+      eventListeners: {
+        onMove: null,
+        onUp: null,
+        onKeyUp: null,
+        onKeyDown: null,
+      },
     };
   }
 
   private handleCanvasPointerDown = (
     event: React.PointerEvent<HTMLCanvasElement>,
   ) => {
-    if (
-      event.pointerType === "touch" &&
-      this.state.draggingElement &&
-      this.state.draggingElement.type === "freedraw"
-    ) {
-      const element = this.state.draggingElement as FreeDrawElement;
-      this.updateScene({
-        ...(element.points.length < 10
-          ? {
-              elements: this.scene
-                .getElementsIncludingDeleted()
-                .filter((el) => el.id !== element.id),
-            }
-          : {}),
-        appState: {
-          draggingElement: null,
-          editingElement: null,
-          startBoundElement: null,
-          suggestedBindings: [],
-          selectedElementIds: Object.keys(this.state.selectedElementIds)
-            .filter((key) => key !== element.id)
-            .reduce((obj: { [id: string]: boolean }, key) => {
-              obj[key] = this.state.selectedElementIds[key];
-              return obj;
-            }, {}),
-        },
-      });
-      return;
-    }
     const pointerDownState = this.initialPointerDownState(event);
     if (this.state.activeTool.type === "freedraw") {
       this.handleFreeDrawElementOnPointerDown(
@@ -163,21 +107,54 @@ class App extends React.Component<any, any> {
         pointerDownState,
       );
     }
+    this.props?.onPointerDown?.(this.state.activeTool, pointerDownState);
+    const onPointerMove =
+    this.onPointerMoveFromPointerDownHandler(pointerDownState);
+  
+    window.addEventListener('pointermove', onPointerMove);
+
+    pointerDownState.eventListeners.onMove = onPointerMove;
   };
+
+  private onPointerMoveFromPointerDownHandler = ( pointerDownState: PointerDownState,)=>{
+    console.log('onPointerMoveFromPointerDownHandler','hx')
+    const draggingElement = this.state.draggingElement
+    return withBatchedUpdatesThrottled(
+      (event)=>{
+        console.log(event,'hx',draggingElement?.type )
+        const pointerCoords = viewportCoordsToSceneCoords(event);
+        if (draggingElement?.type === "freedraw") {
+          const points = draggingElement.points;
+          const dx = pointerCoords.x - draggingElement.x;
+          const dy = pointerCoords.y - draggingElement.y;
+    
+          const lastPoint = points.length > 0 && points[points.length - 1];
+          const discardPoint =
+            lastPoint && lastPoint[0] === dx && lastPoint[1] === dy;
+            console.log(lastPoint,'hx')
+    
+          if (!discardPoint) {
+            const pressures = draggingElement.simulatePressure
+              ? draggingElement.pressures
+              : [...draggingElement.pressures, [0.5]];
+    
+            mutateElement(draggingElement, {
+              points: [...points, [dx, dy]],
+              pressures,
+            });
+          }
+        }
+      }
+    )
+
+  }
 
   private handleCanvasPointerMove = (
     event: React.PointerEvent<HTMLCanvasElement>,
   ) => {
-    this.savePointer(event.clientX, event.clientY, this.state.cursorButton);
-    
-    const [element=null] = this.scene.getElementsIncludingDeleted()||[]
+    if(this.state.activeTool.type==="freedraw"){
+    }
 
-    if(element){
-    mutateElement(element, {
-      points: [[0, 0]],
-      pressures:[0.5],
-    });
-  }
   };
 
   public updateScene = withBatchedUpdates(
@@ -233,6 +210,10 @@ class App extends React.Component<any, any> {
       ...this.scene.getElementsIncludingDeleted(),
       element,
     ]);
+    this.setState({
+      draggingElement: element,
+      editingElement: element,
+    });
   };
 
   private savePointer = (x: number, y: number, button: "up" | "down") => {

@@ -23,7 +23,6 @@ export const renderElement = (
   const generator = rc.generator;
   switch (element.type) {
     case "freedraw": {
-      console.log('renderElement')
       generateElementShape(element,generator);
       drawElementOnCanvas(element, rc, context);
       break;
@@ -112,7 +111,6 @@ const drawElementOnCanvas = (
   context: CanvasRenderingContext2D,
 ) => {
   context.globalAlpha = element.opacity / 100;
-  console.log('drawElementOnCanvas')
   switch (element.type) {
     case "freedraw": {
       // Draw directly to canva
@@ -121,7 +119,6 @@ const drawElementOnCanvas = (
 
       const path = getFreeDrawPath2D(element) as Path2D;
       const fillShape = getShapeForElement(element) ;
-      console.log(JSON.stringify(fillShape),'hxdraw',path,rc)
       if(fillShape){
         rc.draw(fillShape);
       }
