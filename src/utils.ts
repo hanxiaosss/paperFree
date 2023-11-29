@@ -42,9 +42,9 @@ export const withBatchedUpdates = <
 
 
   export const throttleRAF = (fn,opts)=>{
-    let timerId;
-    let lastArgs;
-    let lastArgsTrailing
+    let timerId=null as any;
+    let lastArgs=null as any;
+    let lastArgsTrailing=null as any
     const scheduleFunc = (args) => {
       timerId = window.requestAnimationFrame(() => {
         timerId = null;

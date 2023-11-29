@@ -10,8 +10,6 @@ import { getGridPoint } from './math';
 import { newFreeDrawElement } from '../element/newElement';
 import { mutateElement } from '../element/mutateElement';
 
-let pathCatch:any[] = []
-
 
 class App extends React.Component<any, any> {
   canvas: any = null
@@ -100,6 +98,23 @@ class App extends React.Component<any, any> {
     event: React.PointerEvent<HTMLCanvasElement>,
   ) => {
     const pointerDownState = this.initialPointerDownState(event);
+    if (
+      event.pointerType === "touch" &&
+      this.state.draggingElement &&
+      this.state.draggingElement.type === "freedraw"
+    ) {
+      const element = this.state.draggingElement as FreeDrawElement;
+      this.updateScene({
+        ...(element.points.length < 10
+          ? {
+              elements: this.scene
+                .getElementsIncludingDeleted()
+                .filter((el) => el.id !== element.id),
+            }
+          : {}),
+      });
+      return;
+    }
     if (this.state.activeTool.type === "freedraw") {
       this.handleFreeDrawElementOnPointerDown(
         event,
@@ -117,11 +132,9 @@ class App extends React.Component<any, any> {
   };
 
   private onPointerMoveFromPointerDownHandler = ( pointerDownState: PointerDownState,)=>{
-    console.log('onPointerMoveFromPointerDownHandler','hx')
     const draggingElement = this.state.draggingElement
     return withBatchedUpdatesThrottled(
       (event)=>{
-        console.log(event,'hx',draggingElement?.type )
         const pointerCoords = viewportCoordsToSceneCoords(event);
         if (draggingElement?.type === "freedraw") {
           const points = draggingElement.points;
@@ -131,7 +144,6 @@ class App extends React.Component<any, any> {
           const lastPoint = points.length > 0 && points[points.length - 1];
           const discardPoint =
             lastPoint && lastPoint[0] === dx && lastPoint[1] === dy;
-            console.log(lastPoint,'hx')
     
           if (!discardPoint) {
             const pressures = draggingElement.simulatePressure
@@ -143,6 +155,7 @@ class App extends React.Component<any, any> {
               pressures,
             });
           }
+          this.setState({verson:new Date()})
         }
       }
     )
@@ -214,25 +227,6 @@ class App extends React.Component<any, any> {
       draggingElement: element,
       editingElement: element,
     });
-  };
-
-  private savePointer = (x: number, y: number, button: "up" | "down") => {
-    if (!x || !y) {
-      return;
-    }
-    const pointer = viewportCoordsToSceneCoords(
-      { clientX: x, clientY: y },
-    );
-
-    if (isNaN(pointer.x) || isNaN(pointer.y)) {
-      // sometimes the pointer goes off screen
-    }
-
-    // this.props.onPointerUpdate?.({
-    //   pointer,
-    //   button,
-    //   pointersMap: gesture.pointers,
-    // });
   };
 
   public render() {
