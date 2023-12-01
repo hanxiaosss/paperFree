@@ -46,7 +46,6 @@ export const renderScene = <T extends boolean = false>(
     callback?: (data: ReturnType<typeof _renderScene>) => void;
   }
 ): T extends true ? void : ReturnType<typeof _renderScene> => {
-  const {elements,rc,canvas}=config
   const ret = _renderScene(config);
   config.callback?.(ret);
   return ret as T extends true ? void : ReturnType<typeof _renderScene>;

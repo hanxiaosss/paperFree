@@ -203,20 +203,10 @@ class App extends React.Component<any, any> {
       y: gridY,
       simulatePressure: event.pressure === 0.5,
     });
-    this.setState((prevState) => ({
-      selectedElementIds: {
-        ...prevState.selectedElementIds,
-        [element.id]: false,
-      },
-    }));
-
-    const pressures = element.simulatePressure
-      ? element.pressures
-      : [...element.pressures, event.pressure];
 
     mutateElement(element, {
-      points: [[0, 0]],
-      pressures,
+      points: [[gridX, gridY]],
+      pressures:[0.5],
     });
 
     this.scene.replaceAllElements([
@@ -225,7 +215,6 @@ class App extends React.Component<any, any> {
     ]);
     this.setState({
       draggingElement: element,
-      editingElement: element,
     });
   };
 

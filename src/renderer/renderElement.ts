@@ -140,12 +140,12 @@ export const getShapeForElement = <T extends drawElement>(element: T) =>
     ? ElementShapes[T["type"]] | undefined
     : Drawable | null | undefined;
 
-    export const setShapeForElement = <T extends drawElement>(
-      element: T,
-      shape: T["type"] extends keyof ElementShapes
-        ? ElementShapes[T["type"]]
-        : Drawable,
-    ) => shapeCache.set(element, shape);
+export const setShapeForElement = <T extends drawElement>(
+  element: T,
+  shape: T["type"] extends keyof ElementShapes
+    ? ElementShapes[T["type"]]
+    : Drawable,
+) => shapeCache.set(element, shape);
 
 function getSvgPathFromStroke(points: number[][]): string {
   if (!points.length) {
